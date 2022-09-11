@@ -15,7 +15,7 @@ struct Enrolle
 	int informaticsScore;
 	int literatureScore;
 
-	bool isValid()
+	bool isValid() const
 	{
 		return surname.length() > 0
 			&& mathScore > MIN_SCORE && mathScore <= MAX_MATH_SCORE
@@ -32,11 +32,16 @@ struct Enrolle
 		input >> informaticsScore;
 		input >> literatureScore;
 	}
+
+	int getTotalScore() const
+	{
+		return mathScore + informaticsScore + literatureScore;
+	}
 };
 
 std::ostream& operator<<(std::ostream& output, Enrolle const& enrolle)
 {
-	output << enrolle.surname << " " << enrolle.mathScore << " " << enrolle.informaticsScore << " " << enrolle.literatureScore;
+	output << enrolle.surname << " " << enrolle.getTotalScore();
 
 	return output;
 }

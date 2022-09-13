@@ -10,7 +10,7 @@ constexpr int MAX_LITERATURE_SCORE = 5;
 
 struct Enrolle 
 {
-	std::string surname;
+	std::wstring surname;
 	int mathScore;
 	int informaticsScore;
 	int literatureScore;
@@ -23,9 +23,9 @@ struct Enrolle
 			&& literatureScore > MIN_SCORE && literatureScore <= MAX_LITERATURE_SCORE;
 	}
 
-	void fromString(std::string str)
+	void fromString(std::wstring str)
 	{
-		std::stringstream input(str);
+		std::wstringstream input(str);
 		input >> std::ws;
 		input >> surname;
 		input >> mathScore;
@@ -39,7 +39,7 @@ struct Enrolle
 	}
 };
 
-std::ostream& operator<<(std::ostream& output, Enrolle const& enrolle)
+std::wostream& operator<<(std::wostream& output, Enrolle const& enrolle)
 {
 	output << enrolle.surname << " " << enrolle.getTotalScore();
 

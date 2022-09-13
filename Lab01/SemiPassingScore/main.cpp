@@ -38,7 +38,7 @@ struct Args
 {
 	string inputFileName;
 	string outputFileName;
-	unsigned countOfPlaces;
+	int countOfPlaces;
 };
 
 optional<Args> ParseArgs(int argc, char* argv[]);
@@ -108,7 +108,7 @@ optional<Args> ParseArgs(int argc, char* argv[])
 
 void ReadEnrollesFromFile(string inputFileName, vector<Enrolle>& enrolles)
 {
-	ifstream inputFile;
+	wifstream inputFile;
 	inputFile.open(inputFileName);
 
 	if (!inputFile.is_open())
@@ -116,13 +116,12 @@ void ReadEnrollesFromFile(string inputFileName, vector<Enrolle>& enrolles)
 		throw exception("failed to open input file");
 	}
 
-	string src;
+	wstring src;
 
 	while (getline(inputFile, src))
 	{
 		Enrolle enrolle;
 		enrolle.fromString(src);
-
 		if (enrolle.isValid())
 		{
 			enrolles.push_back(enrolle);
@@ -139,7 +138,7 @@ int Partition(vector<Enrolle>& values, int l, int r)
 
 	for (int i = l; i < r; ++i) 
 	{
-		if (values[i].getTotalScore() <= x)
+		if (values[i].getTotalScore() > x)
 		{
 			swap(values[i], values[less]);
 			++less;
@@ -185,6 +184,7 @@ bool HasSemiPassingScore(vector<Enrolle> const& enrolles, int placesCount)
 
 	if (lastEntered.getTotalScore() != firstNotAdmitted.getTotalScore())
 	{
+		cout << lastEntered.getTotalScore() << " "  << firstNotAdmitted.getTotalScore()  << endl;
 		return false;
 	}
 
@@ -240,7 +240,7 @@ optional<vector<Enrolle>> GetSemiPassingEnrolles(vector<Enrolle> const& enrolles
 	return GetSemiPassingEnrollesImpl(enrolles, semiPasingScore.value());
 }
 
-void WriteEnrolles(ostream& output, vector<Enrolle> const& enrolles)
+void WriteEnrolles(wostream& output, vector<Enrolle> const& enrolles)
 {
 	for (auto const& enrolle : enrolles)
 	{
@@ -250,7 +250,7 @@ void WriteEnrolles(ostream& output, vector<Enrolle> const& enrolles)
 
 void WriteEnrolles(optional<vector<Enrolle>> const& enrolles, string outputFilename)
 {
-	ofstream outFile;
+	wofstream outFile;
 	outFile.open(outputFilename);
 
 	if (!outFile.is_open())
@@ -266,4 +266,6 @@ void WriteEnrolles(optional<vector<Enrolle>> const& enrolles, string outputFilen
 	{
 		outFile << "no semipassing score" << endl;
 	}
+
+	outFile.close();
 }

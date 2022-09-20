@@ -19,6 +19,19 @@ struct Stack
 namespace StackUtils 
 {
 	template <typename T>
+	void PrintStack(Stack<T>* root)
+	{
+		Stack<T>* next = root;
+		cout << "--------- Stack ---------" << endl;
+		while (next != nullptr)
+		{
+			cout << next->key << endl;
+			next = root->next;
+		}
+		cout << "-------------------------" << endl;
+	}
+
+	template <typename T>
 	bool IsEmpty(Stack<T>* stack)
 	{
 		return stack == nullptr;
@@ -30,6 +43,10 @@ namespace StackUtils
 		Stack<T>* stackNode = new Stack<T>(data);
 		stackNode->next = *root;
 		*root = stackNode;
+#ifdef _DEBUG
+		cout << "pushed: " << data << endl;
+		PrintStack(*root);
+#endif	
 	}
 
 	template <typename T>
@@ -42,6 +59,10 @@ namespace StackUtils
 		T popped = temp->key;
 		
 		delete temp;
+#ifdef _DEBUG
+		cout << "popped: " << popped << endl;
+		PrintStack(*root);
+#endif	
 		return popped;
 	}
 
@@ -52,21 +73,7 @@ namespace StackUtils
 			throw exception("failed to peek element from empty stack");
 		return root->key;
 	}
-}
 
-int main()
-{
-	string infixExpression;
-	getline(cin, infixExpression);
-
-	if (infixExpression.empty())
-	{
-		cout << "invalid input expression" << endl;
-
-		return -1;
-	}
-
-	return 0;
 }
 
 namespace InfixConverter
@@ -134,7 +141,7 @@ namespace InfixConverter
 			s.erase(remove_if(s.begin(), s.end(), isspace), s.end());
 		}
 	}
-	
+
 	string ToPostfix(string infixForm)
 	{
 		Stack<char>* stack = nullptr;
@@ -147,14 +154,21 @@ namespace InfixConverter
 			if (IsDigit(ch))
 			{
 				result += ch;
-				continue;
 			}
 
 			if (IsOperator(ch))
 			{
+				result += ' ';
 				if (StackUtils::IsEmpty(stack))
 				{
-					StackUtils::Push(&stack, ch);
+					if (ch != MINUS)
+					{
+						StackUtils::Push(&stack, ch);
+					}				
+					else
+					{
+						result += ch;
+					}
 				}
 				else if (StackUtils::Peek(stack) == BRACKET_LEFT)
 				{
@@ -171,20 +185,120 @@ namespace InfixConverter
 				else
 				{
 					char topOperator = StackUtils::Peek(stack);
-					
-					if (Priority(ch) > Priority(topOperator))
+					unsigned chPriority = Priority(ch);
+
+					if (chPriority > Priority(topOperator))
 					{
 						StackUtils::Push(&stack, ch);
 					}
 					else
 					{
+						if (IsLeftAssociationOperator(ch))
+						{
+							while
+								(
+									(
+										!StackUtils::IsEmpty(stack)
+										||
+										(!StackUtils::IsEmpty(stack) && StackUtils::Peek(stack) == BRACKET_LEFT)
+									)
+									&&
+									(
+										Priority(StackUtils::Peek(stack))
+										>=
+										chPriority
+									)
+								)
+							{
+								result += StackUtils::Pop(&stack);
+								result += ' ';
+							}
+						}
+						else
+						{
+							while
+								(
+									(
+										!StackUtils::IsEmpty(stack)
+										||
+										(!StackUtils::IsEmpty(stack) && StackUtils::Peek(stack) == BRACKET_LEFT)
+									)
+									&&
+									(
+										Priority(StackUtils::Peek(stack))
+										>
+										chPriority
+									)
+								)
+							{
+								result += StackUtils::Pop(&stack);
+								result += ' ';
+							}
 
+							StackUtils::Push(&stack, ch);
+						}
+						StackUtils::Push(&stack, ch);
 					}
 				}
-				continue;
+			}
+
+			if (ch == BRACKET_LEFT)
+			{
+				StackUtils::Push(&stack, ch);
+			}
+
+			if (ch == BRACKET_RIGHT)
+			{
+				while
+					(
+						!StackUtils::IsEmpty(stack)
+						&&
+						(
+							StackUtils::Peek(stack) != BRACKET_LEFT
+						)
+					)
+				{
+					result += ' ';
+					result += StackUtils::Pop(&stack);
+				}
 			}
 		}
 
-		return "";
+		char ch;
+		while (!StackUtils::IsEmpty(stack))
+		{
+			ch = StackUtils::Pop(&stack);
+			if (ch != BRACKET_LEFT && ch != BRACKET_RIGHT)
+			{
+				result += ' ';
+				result += ch;
+			}
+		}
+
+		return result;
 	}
+}
+
+int main()
+{
+	string infixExpression;
+	getline(cin, infixExpression);
+
+	if (infixExpression.empty())
+	{
+		cout << "invalid input expression" << endl;
+
+		return -1;
+	}
+
+	try
+	{
+		cout << InfixConverter::ToPostfix(infixExpression) << endl;
+	}
+	catch (exception const& e)
+	{
+		cout << e.what() << endl;
+	}
+
+	return 0;
 }

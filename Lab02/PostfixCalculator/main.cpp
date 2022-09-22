@@ -1,6 +1,7 @@
 ﻿#include <iostream>
 #include <set>
 #include <string>
+#include <sstream>
 #include <limits>
 #include <algorithm>
 
@@ -20,7 +21,7 @@ struct Stack
 namespace StackUtils 
 {
 	template <typename T>
-	void PrintStack(Stack<T>* root)
+	void Print(Stack<T>* root)
 	{
 		Stack<T>* next = root;
 		cout << "--------- Stack ---------" << endl;
@@ -30,6 +31,21 @@ namespace StackUtils
 			next = next->next;
 		}
 		cout << "-------------------------" << endl;
+	}
+
+	template <typename T>
+	size_t Size(Stack<T>* root)
+	{
+		size_t size = 0;
+		Stack<T>* next = root;
+
+		while (next != nullptr)
+		{
+			next = next->next;
+			size++;
+		}
+
+		return size;
 	}
 
 	template <typename T>
@@ -46,7 +62,7 @@ namespace StackUtils
 		*root = stackNode;
 #ifdef _DEBUG
 		cout << "pushed: " << data << endl;
-		PrintStack(*root);
+		Print(*root);
 #endif	
 	}
 
@@ -62,7 +78,7 @@ namespace StackUtils
 		delete temp;
 #ifdef _DEBUG
 		cout << "popped: " << popped << endl;
-		PrintStack(*root);
+		Print(*root);
 #endif	
 		return popped;
 	}
@@ -100,6 +116,11 @@ namespace InfixConverter
 			return OPERATORS.find(ch) != OPERATORS.end();
 		}
 
+		bool IsOperator(string str)
+		{
+			return str.length() == 1 && IsOperator(str[0]);
+		}
+
 		unsigned Priority(char op)
 		{
 			switch (op)
@@ -115,7 +136,6 @@ namespace InfixConverter
 			case UNARY_MINUS:
 				return 3;
 			default:
-				cout << op << " ";
 				throw exception("unknown operator");
 			}
 		}
@@ -133,7 +153,6 @@ namespace InfixConverter
 			case POWER:
 				return false;
 			default:
-				cout << op << " ";
 				throw exception("unknown operator");
 			}
 		}
@@ -141,18 +160,6 @@ namespace InfixConverter
 		void RemoveSpaces(string& s)
 		{
 			s.erase(remove_if(s.begin(), s.end(), isspace), s.end());
-		}
-
-		void ReplaceString(string & subject,  string const& search, string const& replace) 
-		{
-			size_t pos = 0;
-			while (
-				(pos = subject.find(search, pos)) != string::npos
-			) 
-			{
-				subject.replace(pos, search.length(), replace);
-				pos += replace.length();
-			}
 		}
 
 		bool IsUnaryMinus(string const& infixForm, char op, unsigned index)
@@ -302,10 +309,74 @@ namespace InfixConverter
 				result += ch;
 			}
 		}
-		
-		ReplaceString(result, " ~", "-");
 
 		return result;
+	}
+
+	void ExecuteOperation(char op, Stack<double>* stack)
+	{
+		double rhs = StackUtils::Pop(&stack);
+		double lhs = StackUtils::Pop(&stack);
+		double result = 0;
+		
+		switch (op)
+		{
+		case PLUS:
+			result = lhs + rhs;
+			break;
+		case MINUS:
+			result = lhs - rhs;
+			break;
+		case UNARY_MINUS:
+			StackUtils::Push(&stack, lhs);
+			StackUtils::Push(&stack, -rhs);
+			return;
+		case MULTIPLY:
+			result = lhs * rhs;
+			break;
+		case DIVIDE:
+			result = lhs / rhs;
+			break;
+		case POWER:
+			result = pow(rhs, lhs);
+			break;
+		default:
+			throw exception("unknown operator");
+		}
+
+		StackUtils::Push(&stack, result);
+	}
+
+	double CalculateExpression(string const& infixForm)
+	{
+		Stack<double>* stack = nullptr;
+		stringstream postfixForm(ToPostfix(infixForm));
+		string token;
+
+		while (!postfixForm.eof())
+		{
+			postfixForm >> skipws;
+			postfixForm >> token;
+
+			if (IsOperator(token) && StackUtils::Size(stack) >= 2)
+			{
+				ExecuteOperation(token[0], stack);
+			}
+			else
+			{
+				try
+				{
+					double value = stod(token);
+					StackUtils::Push(&stack, value);
+				}
+				catch (exception const& e)
+				{
+					throw e;
+				}
+			}
+		}
+
+		StackUtils::Print(stack);
 	}
 }
 
@@ -324,6 +395,7 @@ int main()
 	try
 	{
 		cout << InfixConverter::ToPostfix(infixExpression) << endl;
+		InfixConverter::CalculateExpression(infixExpression);
 	}
 	catch (exception const& e)
 	{

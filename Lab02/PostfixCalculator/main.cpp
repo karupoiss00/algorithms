@@ -1,7 +1,8 @@
-#include <iostream>
+﻿#include <iostream>
 #include <set>
 #include <string>
 #include <limits>
+#include <algorithm>
 
 using namespace std;
 
@@ -26,7 +27,7 @@ namespace StackUtils
 		while (next != nullptr)
 		{
 			cout << next->key << endl;
-			next = root->next;
+			next = next->next;
 		}
 		cout << "-------------------------" << endl;
 	}
@@ -85,18 +86,14 @@ namespace InfixConverter
 		constexpr char MULTIPLY = '*';
 		constexpr char DIVIDE = '/';
 		constexpr char POWER = '^';
+		constexpr char UNARY_MINUS = '~';
 		constexpr char BRACKET_LEFT = '(';
 		constexpr char BRACKET_RIGHT = ')';
 
 		const set<char> OPERATORS =
 		{
-			PLUS , MINUS , MULTIPLY, DIVIDE,POWER
+			PLUS , MINUS , MULTIPLY, DIVIDE, POWER
 		};
-
-		bool IsDigit(char ch)
-		{
-			return ch >= '0' && ch <= '9';
-		}
 
 		bool IsOperator(char ch)
 		{
@@ -107,15 +104,18 @@ namespace InfixConverter
 		{
 			switch (op)
 			{
-			case '+':
-			case '-':
+			case PLUS:
+			case MINUS:
 				return 0;
-			case '*':
-			case '/':
+			case MULTIPLY:
+			case DIVIDE:
 				return 1;
-			case '^':
+			case POWER:
 				return 2;
+			case UNARY_MINUS:
+				return 3;
 			default:
+				cout << op << " ";
 				throw exception("unknown operator");
 			}
 		}
@@ -124,14 +124,16 @@ namespace InfixConverter
 		{
 			switch (op)
 			{
-			case '+':
-			case '-':
-			case '*':
-			case '/':
+			case PLUS:
+			case MINUS:
+			case UNARY_MINUS:
+			case MULTIPLY:
+			case DIVIDE:
 				return true;
-			case '^':
+			case POWER:
 				return false;
 			default:
+				cout << op << " ";
 				throw exception("unknown operator");
 			}
 		}
@@ -139,6 +141,28 @@ namespace InfixConverter
 		void RemoveSpaces(string& s)
 		{
 			s.erase(remove_if(s.begin(), s.end(), isspace), s.end());
+		}
+
+		void ReplaceString(string & subject,  string const& search, string const& replace) 
+		{
+			size_t pos = 0;
+			while (
+				(pos = subject.find(search, pos)) != string::npos
+			) 
+			{
+				subject.replace(pos, search.length(), replace);
+				pos += replace.length();
+			}
+		}
+
+		bool IsUnaryMinus(string const& infixForm, char op, unsigned index)
+		{
+			return op == MINUS && (index == 0 || (index > 1 && (IsOperator(infixForm[index - 1]) || (infixForm[index - 1] == BRACKET_LEFT))));
+		}
+
+		bool IsPrevDigit(string const& infixForm, unsigned index)
+		{
+			return index > 0 && isdigit(infixForm[index - 1]);
 		}
 	}
 
@@ -149,26 +173,28 @@ namespace InfixConverter
 
 		RemoveSpaces(infixForm);
 
-		for (auto const& ch : infixForm)
+		unsigned i = 0;
+		for (auto ch : infixForm)
 		{
-			if (IsDigit(ch))
+			if (isdigit(ch))
 			{
+				if (i > 0 && !isdigit(infixForm[i - 1]))
+				{
+					result += ' ';
+				}
 				result += ch;
 			}
 
 			if (IsOperator(ch))
 			{
-				result += ' ';
+				if (IsUnaryMinus(infixForm, ch, i))
+				{
+					ch = '~';
+				}
+					
 				if (StackUtils::IsEmpty(stack))
 				{
-					if (ch != MINUS)
-					{
-						StackUtils::Push(&stack, ch);
-					}				
-					else
-					{
-						result += ch;
-					}
+					StackUtils::Push(&stack, ch);
 				}
 				else if (StackUtils::Peek(stack) == BRACKET_LEFT)
 				{
@@ -197,10 +223,10 @@ namespace InfixConverter
 						{
 							while
 								(
-									(
-										!StackUtils::IsEmpty(stack)
+									!(
+										StackUtils::IsEmpty(stack)
 										||
-										(!StackUtils::IsEmpty(stack) && StackUtils::Peek(stack) == BRACKET_LEFT)
+										StackUtils::Peek(stack) == BRACKET_LEFT
 									)
 									&&
 									(
@@ -210,18 +236,18 @@ namespace InfixConverter
 									)
 								)
 							{
-								result += StackUtils::Pop(&stack);
 								result += ' ';
+								result += StackUtils::Pop(&stack);
 							}
 						}
 						else
 						{
 							while
 								(
-									(
-										!StackUtils::IsEmpty(stack)
+									!(
+										StackUtils::IsEmpty(stack)
 										||
-										(!StackUtils::IsEmpty(stack) && StackUtils::Peek(stack) == BRACKET_LEFT)
+										(StackUtils::Peek(stack) == BRACKET_LEFT)
 									)
 									&&
 									(
@@ -231,8 +257,8 @@ namespace InfixConverter
 									)
 								)
 							{
-								result += StackUtils::Pop(&stack);
 								result += ' ';
+								result += StackUtils::Pop(&stack);
 							}
 
 							StackUtils::Push(&stack, ch);
@@ -262,6 +288,8 @@ namespace InfixConverter
 					result += StackUtils::Pop(&stack);
 				}
 			}
+
+			i++;
 		}
 
 		char ch;
@@ -274,6 +302,8 @@ namespace InfixConverter
 				result += ch;
 			}
 		}
+		
+		ReplaceString(result, " ~", "-");
 
 		return result;
 	}

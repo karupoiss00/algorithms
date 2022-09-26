@@ -7,6 +7,15 @@
 
 using namespace std;
 
+constexpr char PLUS = '+';
+constexpr char MINUS = '-';
+constexpr char MULTIPLY = '*';
+constexpr char DIVIDE = '/';
+constexpr char POWER = '^';
+constexpr char UNARY_MINUS = '~';
+constexpr char BRACKET_LEFT = '(';
+constexpr char BRACKET_RIGHT = ')';
+
 template <typename T>
 struct Stack
 {
@@ -97,15 +106,6 @@ namespace InfixConverter
 {
 	namespace
 	{
-		constexpr char PLUS = '+';
-		constexpr char MINUS = '-';
-		constexpr char MULTIPLY = '*';
-		constexpr char DIVIDE = '/';
-		constexpr char POWER = '^';
-		constexpr char UNARY_MINUS = '~';
-		constexpr char BRACKET_LEFT = '(';
-		constexpr char BRACKET_RIGHT = ')';
-
 		const set<char> OPERATORS =
 		{
 			PLUS , MINUS , MULTIPLY, DIVIDE, POWER
@@ -114,11 +114,6 @@ namespace InfixConverter
 		bool IsOperator(char ch)
 		{
 			return OPERATORS.find(ch) != OPERATORS.end();
-		}
-
-		bool IsOperator(string str)
-		{
-			return str.length() == 1 && IsOperator(str[0]);
 		}
 
 		unsigned Priority(char op)
@@ -171,186 +166,235 @@ namespace InfixConverter
 		{
 			return index > 0 && isdigit(infixForm[index - 1]);
 		}
-	}
 
-	string ToPostfix(string infixForm)
-	{
-		Stack<char>* stack = nullptr;
-		string result;
 
-		RemoveSpaces(infixForm);
-
-		unsigned i = 0;
-		for (auto ch : infixForm)
+		bool IsOperator(string str)
 		{
-			if (isdigit(ch))
-			{
-				if (i > 0 && !isdigit(infixForm[i - 1]))
-				{
-					result += ' ';
-				}
-				result += ch;
-			}
+			return str.length() == 1 && IsOperator(str[0]);
+		}
 
-			if (IsOperator(ch))
+		string ToPostfix(string infixForm)
+		{
+			Stack<char>* stack = nullptr;
+			string result;
+
+			RemoveSpaces(infixForm);
+
+			unsigned i = 0;
+			for (auto ch : infixForm)
 			{
-				if (IsUnaryMinus(infixForm, ch, i))
+				if (isdigit(ch))
 				{
-					ch = '~';
-				}
-					
-				if (StackUtils::IsEmpty(stack))
-				{
-					StackUtils::Push(&stack, ch);
-				}
-				else if (StackUtils::Peek(stack) == BRACKET_LEFT)
-				{
-					StackUtils::Push(&stack, ch);
-				}
-				else if (StackUtils::Peek(stack) == BRACKET_RIGHT)
-				{
-					while (StackUtils::Peek(stack) != BRACKET_LEFT)
+					if (i > 0 && !isdigit(infixForm[i - 1]))
 					{
-						result += StackUtils::Pop(&stack);
+						result += ' ';
 					}
-					StackUtils::Pop(&stack);
+					result += ch;
 				}
-				else
-				{
-					char topOperator = StackUtils::Peek(stack);
-					unsigned chPriority = Priority(ch);
 
-					if (chPriority > Priority(topOperator))
+				if (IsOperator(ch))
+				{
+					if (IsUnaryMinus(infixForm, ch, i))
+					{
+						ch = '~';
+					}
+
+					if (StackUtils::IsEmpty(stack))
 					{
 						StackUtils::Push(&stack, ch);
+					}
+					else if (StackUtils::Peek(stack) == BRACKET_LEFT)
+					{
+						StackUtils::Push(&stack, ch);
+					}
+					else if (StackUtils::Peek(stack) == BRACKET_RIGHT)
+					{
+						while (StackUtils::Peek(stack) != BRACKET_LEFT)
+						{
+							result += StackUtils::Pop(&stack);
+						}
+						StackUtils::Pop(&stack);
 					}
 					else
 					{
-						if (IsLeftAssociationOperator(ch))
+						char topOperator = StackUtils::Peek(stack);
+						unsigned chPriority = Priority(ch);
+
+						if (chPriority > Priority(topOperator))
 						{
-							while
-								(
-									!(
-										StackUtils::IsEmpty(stack)
-										||
-										StackUtils::Peek(stack) == BRACKET_LEFT
-									)
-									&&
-									(
-										Priority(StackUtils::Peek(stack))
-										>=
-										chPriority
-									)
-								)
-							{
-								result += ' ';
-								result += StackUtils::Pop(&stack);
-							}
+							StackUtils::Push(&stack, ch);
 						}
 						else
 						{
-							while
-								(
-									!(
-										StackUtils::IsEmpty(stack)
-										||
-										(StackUtils::Peek(stack) == BRACKET_LEFT)
-									)
-									&&
-									(
-										Priority(StackUtils::Peek(stack))
-										>
-										chPriority
-									)
-								)
+							if (IsLeftAssociationOperator(ch))
 							{
-								result += ' ';
-								result += StackUtils::Pop(&stack);
+								while
+									(
+										!(
+											StackUtils::IsEmpty(stack)
+											||
+											StackUtils::Peek(stack) == BRACKET_LEFT
+											)
+										&&
+										(
+											Priority(StackUtils::Peek(stack))
+											>=
+											chPriority
+											)
+										)
+								{
+									result += ' ';
+									result += StackUtils::Pop(&stack);
+								}
 							}
+							else
+							{
+								while
+									(
+										!(
+											StackUtils::IsEmpty(stack)
+											||
+											(StackUtils::Peek(stack) == BRACKET_LEFT)
+											)
+										&&
+										(
+											Priority(StackUtils::Peek(stack))
+										>
+											chPriority
+											)
+										)
+								{
+									result += ' ';
+									result += StackUtils::Pop(&stack);
+								}
 
+								StackUtils::Push(&stack, ch);
+							}
 							StackUtils::Push(&stack, ch);
 						}
-						StackUtils::Push(&stack, ch);
 					}
 				}
-			}
 
-			if (ch == BRACKET_LEFT)
-			{
-				StackUtils::Push(&stack, ch);
-			}
+				if (ch == BRACKET_LEFT)
+				{
+					StackUtils::Push(&stack, ch);
+				}
 
-			if (ch == BRACKET_RIGHT)
-			{
-				while
-					(
-						!StackUtils::IsEmpty(stack)
-						&&
+				if (ch == BRACKET_RIGHT)
+				{
+					while
 						(
-							StackUtils::Peek(stack) != BRACKET_LEFT
-						)
-					)
+							!StackUtils::IsEmpty(stack)
+							&&
+							(
+								StackUtils::Peek(stack) != BRACKET_LEFT
+								)
+							)
+					{
+						result += ' ';
+						result += StackUtils::Pop(&stack);
+					}
+				}
+
+				i++;
+			}
+
+			char ch;
+			while (!StackUtils::IsEmpty(stack))
+			{
+				ch = StackUtils::Pop(&stack);
+				if (ch != BRACKET_LEFT && ch != BRACKET_RIGHT)
 				{
 					result += ' ';
-					result += StackUtils::Pop(&stack);
+					result += ch;
 				}
 			}
 
-			i++;
+			return result;
 		}
 
-		char ch;
-		while (!StackUtils::IsEmpty(stack))
+	}
+}
+
+namespace Calculator
+{
+	namespace
+	{
+		bool IsUnaryOperator(string op)
 		{
-			ch = StackUtils::Pop(&stack);
-			if (ch != BRACKET_LEFT && ch != BRACKET_RIGHT)
+			return op.length() == 1 && op[0] == UNARY_MINUS;
+		}
+
+		void ExecuteBinaryOperation(char op, Stack<double>** stack)
+		{
+			double rhs = StackUtils::Pop(&*stack);
+			double lhs = StackUtils::Pop(&*stack);
+			double result = 0;
+
+			switch (op)
 			{
-				result += ' ';
-				result += ch;
+			case PLUS:
+				result = lhs + rhs;
+				break;
+			case MINUS:
+				result = lhs - rhs;
+				break;
+			case MULTIPLY:
+				result = lhs * rhs;
+				break;
+			case DIVIDE:
+				result = lhs / rhs;
+				break;
+			case POWER:
+				result = pow(rhs, lhs);
+				break;
+			default:
+				throw exception("unknown binary operator");
+			}
+
+			StackUtils::Push(&*stack, result);
+		}
+
+		void ExecuteUnaryOperation(char op, Stack<double>** stack)
+		{
+			double operand = StackUtils::Pop(&*stack);
+
+			switch (op)
+			{
+			case UNARY_MINUS:
+				StackUtils::Push(&*stack, -operand);
+				break;
+			default:
+				throw exception("unknown unary operator");
 			}
 		}
 
-		return result;
-	}
-
-	void ExecuteOperation(char op, Stack<double>* stack)
-	{
-		double rhs = StackUtils::Pop(&stack);
-		double lhs = StackUtils::Pop(&stack);
-		double result = 0;
-		
-		switch (op)
+		void ExecuteOperation(string op, Stack<double>** stack)
 		{
-		case PLUS:
-			result = lhs + rhs;
-			break;
-		case MINUS:
-			result = lhs - rhs;
-			break;
-		case UNARY_MINUS:
-			StackUtils::Push(&stack, lhs);
-			StackUtils::Push(&stack, -rhs);
-			return;
-		case MULTIPLY:
-			result = lhs * rhs;
-			break;
-		case DIVIDE:
-			result = lhs / rhs;
-			break;
-		case POWER:
-			result = pow(rhs, lhs);
-			break;
-		default:
-			throw exception("unknown operator");
+			size_t stackSize = StackUtils::Size(*stack);
+			if (IsUnaryOperator(op))
+			{
+				if (stackSize < 1)
+				{
+					throw new exception("invalid expression");
+				}
+				ExecuteUnaryOperation(op[0], stack);
+			}
+			else
+			{
+				if (stackSize < 2)
+				{
+					throw new exception("invalid expression");
+				}
+				ExecuteBinaryOperation(op[0], stack);
+			}
 		}
-
-		StackUtils::Push(&stack, result);
 	}
 
 	double CalculateExpression(string const& infixForm)
 	{
 		Stack<double>* stack = nullptr;
-		stringstream postfixForm(ToPostfix(infixForm));
+		stringstream postfixForm(InfixConverter::ToPostfix(infixForm));
 		string token;
 
 		while (!postfixForm.eof())
@@ -358,16 +402,15 @@ namespace InfixConverter
 			postfixForm >> skipws;
 			postfixForm >> token;
 
-			if (IsOperator(token) && StackUtils::Size(stack) >= 2)
+			if (InfixConverter::IsOperator(token) || IsUnaryOperator(token))
 			{
-				ExecuteOperation(token[0], stack);
+				ExecuteOperation(token, &stack);
 			}
 			else
 			{
 				try
 				{
-					double value = stod(token);
-					StackUtils::Push(&stack, value);
+					StackUtils::Push(&stack, stod(token));
 				}
 				catch (exception const& e)
 				{
@@ -376,7 +419,7 @@ namespace InfixConverter
 			}
 		}
 
-		StackUtils::Print(stack);
+		return StackUtils::Pop(&stack);
 	}
 }
 
@@ -395,7 +438,7 @@ int main()
 	try
 	{
 		cout << InfixConverter::ToPostfix(infixExpression) << endl;
-		InfixConverter::CalculateExpression(infixExpression);
+		cout << Calculator::CalculateExpression(infixExpression) << endl;
 	}
 	catch (exception const& e)
 	{

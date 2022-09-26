@@ -120,16 +120,18 @@ namespace InfixConverter
 		{
 			switch (op)
 			{
+			case BRACKET_LEFT:
+				return 0;
 			case PLUS:
 			case MINUS:
-				return 0;
+				return 1;
 			case MULTIPLY:
 			case DIVIDE:
-				return 1;
-			case POWER:
 				return 2;
-			case UNARY_MINUS:
+			case POWER:
 				return 3;
+			case UNARY_MINUS:
+				return 4;
 			default:
 				throw exception("unknown operator");
 			}
@@ -198,22 +200,10 @@ namespace InfixConverter
 					{
 						ch = '~';
 					}
-
-					if (StackUtils::IsEmpty(stack))
+					
+					if (StackUtils::IsEmpty(stack) || (StackUtils::Peek(stack) == BRACKET_LEFT))
 					{
 						StackUtils::Push(&stack, ch);
-					}
-					else if (StackUtils::Peek(stack) == BRACKET_LEFT)
-					{
-						StackUtils::Push(&stack, ch);
-					}
-					else if (StackUtils::Peek(stack) == BRACKET_RIGHT)
-					{
-						while (StackUtils::Peek(stack) != BRACKET_LEFT)
-						{
-							result += StackUtils::Pop(&stack);
-						}
-						StackUtils::Pop(&stack);
 					}
 					else
 					{
@@ -230,18 +220,14 @@ namespace InfixConverter
 							{
 								while
 									(
-										!(
-											StackUtils::IsEmpty(stack)
-											||
-											StackUtils::Peek(stack) == BRACKET_LEFT
-											)
+										!StackUtils::IsEmpty(stack)
 										&&
 										(
 											Priority(StackUtils::Peek(stack))
 											>=
 											chPriority
-											)
 										)
+									)
 								{
 									result += ' ';
 									result += StackUtils::Pop(&stack);
@@ -251,24 +237,18 @@ namespace InfixConverter
 							{
 								while
 									(
-										!(
-											StackUtils::IsEmpty(stack)
-											||
-											(StackUtils::Peek(stack) == BRACKET_LEFT)
-											)
+										!StackUtils::IsEmpty(stack)
 										&&
 										(
 											Priority(StackUtils::Peek(stack))
-										>
+											>
 											chPriority
-											)
 										)
+									)
 								{
 									result += ' ';
 									result += StackUtils::Pop(&stack);
 								}
-
-								StackUtils::Push(&stack, ch);
 							}
 							StackUtils::Push(&stack, ch);
 						}
@@ -288,12 +268,19 @@ namespace InfixConverter
 							&&
 							(
 								StackUtils::Peek(stack) != BRACKET_LEFT
-								)
 							)
+						)
 					{
 						result += ' ';
 						result += StackUtils::Pop(&stack);
 					}
+
+					if (StackUtils::IsEmpty(stack))
+					{
+						throw exception("incorrect expression, cannot find pair for )");
+					}
+
+					StackUtils::Pop(&stack);
 				}
 
 				i++;
@@ -346,7 +333,7 @@ namespace Calculator
 				result = lhs / rhs;
 				break;
 			case POWER:
-				result = pow(rhs, lhs);
+				result = pow(lhs, rhs);
 				break;
 			default:
 				throw exception("unknown binary operator");

@@ -36,10 +36,10 @@ namespace StackUtils
 		cout << "--------- Stack ---------" << endl;
 		while (next != nullptr)
 		{
-			cout << next->key << endl;
+			cout << next->key << " ";
 			next = next->next;
 		}
-		cout << "-------------------------" << endl;
+		cout << endl << "-------------------------" << endl;
 	}
 
 	template <typename T>
@@ -283,6 +283,8 @@ namespace InfixConverter
 					StackUtils::Pop(&stack);
 				}
 
+				cout << endl << result << endl;
+				StackUtils::Print(stack);
 				i++;
 			}
 
@@ -294,9 +296,12 @@ namespace InfixConverter
 				{
 					result += ' ';
 					result += ch;
+					cout << endl << result << endl;
+					StackUtils::Print(stack);
 				}
 			}
 
+			cout << endl;
 			return result;
 		}
 
@@ -433,7 +438,6 @@ int main()
 
 	try
 	{
-		cout << "Postfix form: " << InfixConverter::ToPostfix(infixExpression) << endl;
 		cout << "Result: " << Calculator::CalculateExpression(infixExpression) << endl;
 	}
 	catch (exception const& e)

@@ -36,10 +36,10 @@ namespace StackUtils
 		cout << "--------- Stack ---------" << endl;
 		while (next != nullptr)
 		{
-			cout << next->key << endl;
+			cout << next->key << " ";
 			next = next->next;
 		}
-		cout << "-------------------------" << endl;
+		cout << endl << "-------------------------" << endl;
 	}
 
 	template <typename T>
@@ -283,6 +283,8 @@ namespace InfixConverter
 					StackUtils::Pop(&stack);
 				}
 
+				cout << endl << result << endl;
+				StackUtils::Print(stack);
 				i++;
 			}
 
@@ -294,9 +296,12 @@ namespace InfixConverter
 				{
 					result += ' ';
 					result += ch;
+					cout << endl << result << endl;
+					StackUtils::Print(stack);
 				}
 			}
 
+			cout << endl;
 			return result;
 		}
 
@@ -363,7 +368,7 @@ namespace Calculator
 			{
 				if (stackSize < 1)
 				{
-					throw new exception("invalid expression");
+					throw exception("invalid expression");
 				}
 				ExecuteUnaryOperation(op[0], stack);
 			}
@@ -371,7 +376,7 @@ namespace Calculator
 			{
 				if (stackSize < 2)
 				{
-					throw new exception("invalid expression");
+					throw exception("invalid expression");
 				}
 				ExecuteBinaryOperation(op[0], stack);
 			}
@@ -391,7 +396,14 @@ namespace Calculator
 
 			if (InfixConverter::IsOperator(token) || IsUnaryOperator(token))
 			{
-				ExecuteOperation(token, &stack);
+				try
+				{
+					ExecuteOperation(token, &stack);
+				}
+				catch (exception const& e)
+				{
+					throw e;
+				}	
 			}
 			else
 			{
@@ -422,10 +434,11 @@ int main()
 		return -1;
 	}
 
+	cout << "Source expression: " << infixExpression << endl;
+
 	try
 	{
-		cout << InfixConverter::ToPostfix(infixExpression) << endl;
-		cout << Calculator::CalculateExpression(infixExpression) << endl;
+		cout << "Result: " << Calculator::CalculateExpression(infixExpression) << endl;
 	}
 	catch (exception const& e)
 	{

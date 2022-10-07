@@ -1,0 +1,48 @@
+Velosiped a
+.Rama o
+..Merida l
+..GT l
+..Jamis l
+..Mongoose o
+...Tyax Comp l
+...Tyax Sport l
+..Corratec l
+.Koljosa a
+..Vtulka o
+...Na prompodshipnikah l
+...Na nasypnyh podshipnikah l
+..Spicy l
+..Obod l
+.Transmissija a
+..Perednjaja a
+...Perekljuchatel' o
+....SRAM l
+....Shimano o
+.....Tourney l
+.....Altus l
+.....Acera l
+.....Alivio l
+.....Deore l
+...Karetka o
+....Na prompodshipnikah l
+...Sistema o
+....3 peredachi l
+....2 peredachi l
+....1 peredacha l
+..Zadnjaja a
+...Perekljuchatel' o
+....SRAM l
+....Shimano o
+.....Tourney l
+.....Altus l
+.....Acera l
+.....Alivio l
+.....Deore l
+...Tip zvjozd o
+....Kasseta l
+....Treshhjotka l
+.Tormoza o
+..Diskovye o
+...gidravlicheskie l
+...mehanicheskie l
+..V-Brake l

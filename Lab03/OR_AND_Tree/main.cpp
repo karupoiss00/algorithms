@@ -3,6 +3,7 @@
 #include <optional>
 #include <fstream>
 #include <string>
+#include <windows.h>
 
 using namespace std;
 
@@ -28,6 +29,7 @@ struct Tree
 {
 	NodeType type;
 	T value;
+	int level;
 	vector<Tree<T>*> sons;
 };
 
@@ -41,12 +43,24 @@ Tree<wstring>* ReadTreeFromFile(string fileName);
 
 int main(int argc, char* argv[])
 {
+	SetConsoleCP(1271);
+	SetConsoleOutputCP(1271);
+
 	auto args = ParseArgs(argc, argv);
 
 	if (!args)
 	{
 		cout << "Invalid input file name" << endl;
 		return -1;
+	}
+
+	try
+	{
+		Tree<wstring>* root = ReadTreeFromFile(args->inputFileName);
+	}
+	catch (exception const& e)
+	{
+		cout << e.what() << endl;
 	}
 
 	return 0;
@@ -65,9 +79,9 @@ optional<Args> ParseArgs(int argc, char* argv[])
 	return args;
 }
 
-NodeType CharToNodeType(char ch)
+NodeType CharToNodeType(wchar_t ch)
 {
-	switch(ch)
+	switch (ch)
 	{
 	case 'o':
 		return NodeType::OR;
@@ -80,9 +94,9 @@ NodeType CharToNodeType(char ch)
 	}
 }
 
-unsigned ReadLevelFromString(wstring& const str)
+int ReadLevelFromString(wstring const& str)
 {
-	unsigned level = 0;
+	int level = 0;
 	for (auto ch : str)
 	{
 		if (ch != LEVEL_CHAR)
@@ -98,11 +112,11 @@ unsigned ReadLevelFromString(wstring& const str)
 	return level;
 }
 
-wstring ReadValueFromString(wstring& const str)
+wstring ReadValueFromString(wstring const& str)
 {
 	wstring value;
 
-	for (auto i = str.find_first_not_of(LEVEL_CHAR); str[i] != ' '; i++)
+	for (auto i = str.find_first_not_of(LEVEL_CHAR); i < str.find_last_of(' '); i++)
 	{
 		value += str[i];
 	}
@@ -110,32 +124,56 @@ wstring ReadValueFromString(wstring& const str)
 	return value;
 }
 
-Tree<wstring>* ReadTreeFromFile(wifstream& file, Tree<wstring>* root, unsigned currentLevel = 0)
+Tree<wstring>* ReadTreeFromFile(wifstream& file, Tree<wstring>*& root, int currentLevel = 0, Tree<wstring> * *prevNode = nullptr)
 {
 	wstring line;
+	Tree<wstring>* currentNode = nullptr;
+	Tree<wstring>* previousNode = prevNode ? *prevNode : nullptr;
+
 	while (getline(file, line))
 	{
-		Tree<wstring>* node = new Tree<wstring>();
-		node->type = CharToNodeType(line.back());
-		node->value = ReadValueFromString(line);
+		currentNode = new Tree<wstring>();
+		currentNode->type = CharToNodeType(line.back());
+		currentNode->value = ReadValueFromString(line);
+		currentNode->level = ReadLevelFromString(line);
 
-		unsigned nodeLevel = ReadLevelFromString(line);
-
-		if (nodeLevel > currentLevel)
+		if (currentNode->level == 0)
 		{
-			root->sons.push_back(node);
+			root = currentNode;
+			previousNode = root;
+			continue;
+		}
 
-			if (node->type == NodeType::LEAF)
+		if ((currentNode->level - currentLevel) == 1)
+		{
+			root->sons.push_back(currentNode);
+		}
+
+		if ((currentNode->level - currentLevel) > 1)
+		{
+			previousNode->sons.push_back(currentNode);
+			Tree<wstring>* notChildNode = ReadTreeFromFile(file, previousNode, currentLevel + 1, &currentNode);
+
+			if (notChildNode)
 			{
-				continue;
+				if ((notChildNode->level - currentLevel) < 1)
+				{
+					return notChildNode;
+				}
+				else
+				{
+					root->sons.push_back(notChildNode);
+					previousNode = notChildNode;
+					continue;
+				}
 			}
+		}
 
-			ReadTreeFromFile(file, node, nodeLevel);
-		}
-		else
+		if ((currentNode->level - currentLevel) < 1)
 		{
-			return node;
+			return currentNode;
 		}
+		previousNode = currentNode;
 	}
 
 	return nullptr;
@@ -147,12 +185,15 @@ Tree<wstring>* ReadTreeFromFile(string fileName)
 
 	wifstream inputFile(fileName);
 
-	if (inputFile.is_open())
+	if (!inputFile.is_open())
 	{
 		throw exception("cannot open input file");
 	}
 
-	 ReadTreeFromFile(inputFile, root);
+	if (ReadTreeFromFile(inputFile, root))
+	{
+		throw exception("something went wrong");
+	}
 
 	return root;
 }

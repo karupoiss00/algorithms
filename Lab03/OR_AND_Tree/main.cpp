@@ -97,16 +97,14 @@ NodeType CharToNodeType(wchar_t ch)
 int ReadLevelFromString(wstring const& str)
 {
 	int level = 0;
+
 	for (auto ch : str)
 	{
 		if (ch != LEVEL_CHAR)
 		{
 			break;
 		}
-		else
-		{
-			level++;
-		}
+		level++;
 	}
 
 	return level;

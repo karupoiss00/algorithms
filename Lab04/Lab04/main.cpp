@@ -5,6 +5,7 @@
 #include <optional>
 #include <limits>
 #include <algorithm>
+#include <sstream>
 
 /*
 	 19. Имеется  сеть  автомобильных  дорог.  Для каждой дороги
@@ -19,18 +20,19 @@
 using namespace std;
 
 constexpr int MAX_INT = numeric_limits<int>::max();
+const string NO_WAY = "no way";
 
 class Matrix
 {
 public:
 	Matrix() : m_data({}) {}
 
-	Matrix(const int& rows, const int& cols)
+	Matrix(const size_t& rows, const size_t& cols)
 	{
 		Reset(rows, cols);
 	}
 
-	void Reset(const int& rows, const int& cols)
+	void Reset(const size_t& rows, const size_t& cols)
 	{
 		m_data.resize(rows);
 		for (int i = 0; i < rows; ++i)
@@ -39,12 +41,12 @@ public:
 		}
 	}
 
-	int At(const int& row, const int& col) const
+	int At(const size_t& row, const size_t& col) const
 	{
 		return m_data.at(row).at(col);
 	}
 
-	int& At(const int& row, const int& col)
+	int& At(const size_t& row, const size_t& col)
 	{
 		if (row >= GetNumRows())
 		{
@@ -58,12 +60,12 @@ public:
 		return m_data.at(row - 1).at(col - 1);
 	}
 
-	int GetNumRows() const
+	size_t GetNumRows() const
 	{
 		return m_data.size();
 	}
 
-	int GetNumColumns() const
+	size_t GetNumColumns() const
 	{
 		if (GetNumRows() > 0)
 		{
@@ -86,9 +88,15 @@ struct Args
 	string inputFileName;
 };
 
+struct PathData
+{
+	size_t weight;
+	string path;
+};
+
 optional<Args> ParseArgs(int argc, char* argv[]);
 optional<Matrix> ReadGraphFromFile(string const& filename);
-int GetMaxWeight(Matrix& graph, int src, int dest);
+PathData GetMaxWeight(Matrix& graph, int src, int dest);
 
 int main(int argc, char* argv[]) {
 	auto args = ParseArgs(argc, argv);
@@ -122,15 +130,24 @@ int main(int argc, char* argv[]) {
 		return -1;
 	}
 
+	PathData path = GetMaxWeight(*graph, source, destination);
+
+	if (path.path == NO_WAY)
+	{
+		cout << NO_WAY << endl;
+		return 0;
+	}
+
 	cout << "Max weight from " << source << " to " << destination << ": ";
-	cout << GetMaxWeight(*graph, source, destination) << endl;
+	cout << path.weight << endl;
+	cout << "Path: " << path.path << endl;
 
 	return 0;
 }
 
 optional<Args> ParseArgs(int argc, char* argv[])
 {
-	if (argc != 2)
+	if (argc < 2)
 	{
 		return nullopt;
 	}
@@ -174,10 +191,10 @@ optional<Matrix> ReadGraphFromFile(string const& filename)
 	return graph;
 }
 
-int MaxWeight(vector<int> weight, vector<bool> visitedVertexes)
+size_t FindNotVisitedVertexWithMaxWeight(vector<int> weight, vector<bool> visitedVertexes)
 {
 	int max = -1;
-	int max_index;
+	size_t max_index;
 
 	for (size_t i = 0; i < weight.size(); i++)
 	{
@@ -191,11 +208,14 @@ int MaxWeight(vector<int> weight, vector<bool> visitedVertexes)
 	return max_index;
 }
 
-int GetMaxWeight(Matrix& graph, int src, int dest)
+PathData GetMaxWeight(Matrix& graph, int src, int dest)
 {
+	PathData result{0, NO_WAY};
+
 	size_t size = graph.GetNumRows();
 
 	vector<int> weight(size, -1);
+	vector<int> path(size, 0);
 	vector<bool> visitedVertexes(size, false);
 
 	weight[src - 1] = MAX_INT;
@@ -204,7 +224,7 @@ int GetMaxWeight(Matrix& graph, int src, int dest)
 
 	for (unsigned count = 0; count < size - 1; count++)
 	{
-		max_index = MaxWeight(weight, visitedVertexes);
+		max_index = FindNotVisitedVertexWithMaxWeight(weight, visitedVertexes);
 		visitedVertexes[max_index] = true;
 
 		for (unsigned j = 0; j < size; j++)
@@ -216,14 +236,33 @@ int GetMaxWeight(Matrix& graph, int src, int dest)
 				&& min_path_weight > weight[j])
 			{
 				weight[j] = min_path_weight;
+				path[j] = max_index + 1;
 			}
 		}
 	}
 
 	if (weight[dest - 1] != -1)
 	{
-		return weight[dest - 1];
-	}
+		stringstream pathStream;
+		vector<int> resultPath = {dest};
+		
+		int v = path[dest - 1];
+		while (v != src)
+		{
+			resultPath.push_back(v);
+			v = path[v - 1];
+		}
 
-	return -1;
+		resultPath.push_back(src);
+		copy(resultPath.rbegin(), resultPath.rend(), ostream_iterator<int>(pathStream, " "));
+		
+		result.weight = weight[dest - 1];
+		result.path = pathStream.str();
+	}
+	else
+	{
+		result.weight = -1;
+	}
+	
+	return result;
 }

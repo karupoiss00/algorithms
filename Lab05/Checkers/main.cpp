@@ -1,13 +1,8 @@
-//20. На  шахматном поле расположены N черных  и  одна  белая
-//шашка.Требуется  написать  программу, которая  по  заданному
-//расположению шашек определяет, какое  максимальное  количество
-//шашек может взять белая шашка за один ход.
-//Ввод из файла INPUT.TXT.Задается 8 строк, каждая  содержит
-//8 символов.Символом ‘0’ обозначается пустая клетка, символом
-//‘1’ положение черной шашки и символом ‘2’ положение белой шашки.
-//Вывод  в  файл  OUTPUT.TXT.Вывести  единственное  число –
-//максимальное количество черных шашек, которых можно  взять  за
-//один ход(11).
+//	20. На  шахматном поле расположены N черных  и  одна  белая
+//	шашка.Требуется  написать  программу, которая  по  заданному
+//	расположению шашек определяет, какое  максимальное  количество
+//	шашек может взять белая шашка за один ход.
+//	Глизерин Ростислав, Visual Studio 2019
 
 #include <iostream>
 #include <optional>
@@ -38,8 +33,15 @@ struct GraphVertex
 {
 	T value;
 	vector<GraphVertex<T>*> sons;
-};
 
+	~GraphVertex()
+	{
+		for (auto& son : sons)
+		{
+			delete son;
+		}
+	}
+};
 
 template <typename T>
 T FindMax(GraphVertex<T>* graph)
@@ -105,15 +107,16 @@ optional<Args> ParseArgs(int argc, char* argv[])
 	return args;
 }
 
-Field ReadFieldFromFile(istream& file)
+Field ReadField(istream& input)
 {
 	string line;
 	Field field;
+	field.fill('0');
 
 	int i = 0;
-	while (getline(file, line))
+	while (getline(input, line))
 	{
-		if (line.empty() && line.length() < FIELD_SIZE)
+		if (line.empty() || line.length() < FIELD_SIZE)
 		{
 			continue;
 		}
@@ -138,10 +141,10 @@ Field ReadFieldFromFile(string fileName)
 		throw exception("cannot open input file");
 	}
 
-	return ReadFieldFromFile(inputFile);
+	return ReadField(inputFile);
 }
 
-bool CanMove(int index)
+bool CanMoveTo(int index)
 {
 	return index >= 0 && index <= 63;
 }
@@ -154,12 +157,12 @@ constexpr int LEFT_BOTTOM_MOVE = 7;
 void GenerateTakes(Field const& field, int checkerPos, GraphVertex<int>* graph)
 {
 	int rightTopPos = checkerPos + RIGHT_TOP_MOVE;
-	if (CanMove(rightTopPos))
+	if (CanMoveTo(rightTopPos))
 	{
 		int posAfterTake = rightTopPos + RIGHT_TOP_MOVE;
 		bool isBorderPos = ((rightTopPos + 1) % FIELD_SIZE == 0);
 		bool canTake = field[rightTopPos] == WHITE_CHECKER 
-			&& CanMove(posAfterTake) 
+			&& CanMoveTo(posAfterTake) 
 			&& field[posAfterTake] == EMPTY_CELL 
 			&& !isBorderPos
 			&& posAfterTake != 0;
@@ -178,12 +181,12 @@ void GenerateTakes(Field const& field, int checkerPos, GraphVertex<int>* graph)
 	}
 
 	int rightBottomPos = checkerPos + RIGHT_BOTTOM_MOVE;
-	if (CanMove(rightBottomPos))
+	if (CanMoveTo(rightBottomPos))
 	{
 		int posAfterTake = rightBottomPos + RIGHT_BOTTOM_MOVE;
 		bool isBorderPos = ((rightBottomPos + 1) % FIELD_SIZE == 0);
 		bool canTake = field[rightBottomPos] == WHITE_CHECKER 
-			&& CanMove(posAfterTake) 
+			&& CanMoveTo(posAfterTake) 
 			&& !isBorderPos
 			&& field[posAfterTake] == EMPTY_CELL;
 		if (canTake)
@@ -201,12 +204,12 @@ void GenerateTakes(Field const& field, int checkerPos, GraphVertex<int>* graph)
 	}
 
 	int leftTopPos = checkerPos + LEFT_TOP_MOVE;
-	if (CanMove(leftTopPos))
+	if (CanMoveTo(leftTopPos))
 	{
 		int posAfterTake = leftTopPos + LEFT_TOP_MOVE;
 		bool isBorderPos = (leftTopPos % FIELD_SIZE == 0);
 		bool canTake = field[leftTopPos] == WHITE_CHECKER 
-			&& CanMove(posAfterTake) 
+			&& CanMoveTo(posAfterTake) 
 			&& posAfterTake != 63 
 			&& field[posAfterTake] == EMPTY_CELL;
 		if (canTake)
@@ -224,12 +227,12 @@ void GenerateTakes(Field const& field, int checkerPos, GraphVertex<int>* graph)
 	}
 
 	int leftBottomPos = checkerPos + LEFT_BOTTOM_MOVE;
-	if (CanMove(leftBottomPos))
+	if (CanMoveTo(leftBottomPos))
 	{
 		int posAfterTake = leftBottomPos + LEFT_BOTTOM_MOVE;
 		bool isBorderPos = (leftBottomPos % FIELD_SIZE == 0);
 		bool canTake = field[leftBottomPos] == WHITE_CHECKER 
-			&& CanMove(posAfterTake)
+			&& CanMoveTo(posAfterTake)
 			&& !isBorderPos
 			&& field[posAfterTake] == EMPTY_CELL;
 		if (canTake)
